@@ -1,0 +1,94 @@
+<?php
+
+/**
+ * Implements hook_block_info().
+ */
+function owners_details_block_block_info() {
+	$blocks['owners_details_block'] = array(
+	'info' => t('Owners details block'),
+	'cache' => DRUPAL_NO_CACHE,);
+	return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+ function owners_details_block_block_view($delta = '') {
+ $block = array();
+ switch ($delta){
+ case 'owners_details_block':
+ 	$block['subject'] = t('Owners details');
+ 	$block['content'] = owners_details();
+ 	break;
+ 	}
+ 	return $block;
+ }
+
+ function owners_details(){
+
+ 	global $user;
+ 	$user_fields = user_load($user->uid);
+ 	$name = $user_fields->field_first_name['und']['0']['value'];
+
+ 	$company = owners_company();
+ 	foreach ($company as $comp){
+ 		$company_name = $comp->title;
+ 		$company_id = $comp->nid;
+ 	}
+
+ 	$url = "http://" . $_SERVER['SERVER_NAME'] . '/drupal7/';
+ 	$link_user = $url .'user/' . userid() . '/edit';
+ 	$to_profile = "<a href= $link_user>edit</a>";
+
+ 	$link_company = $url . 'node/'. $company_id .'/edit';
+ 	$to_company = "<a href= $link_company>edit</a>";
+
+ 	$link_products = $url . 'company/' . $company_id . '/products';
+ 	$to_products = "<a href= $link_products>see</a>";
+
+ 	$prod = count_products();
+
+ 	$text = "Your name: ".$name." ".$to_profile."</br>";
+ 	$text .= "Organization: ".$company_name." ".$to_company."</br>";
+ 	$text .= "Count products: ".$prod . " " . $to_products;
+ 	return $text;
+ }
+
+ function count_products() {
+
+ 	$query = db_select('node', 'n');
+
+ 	if(!$count = $query->condition('n.type','product_display','=')->condition('n.uid', userid(), '=')->countQuery()->execute()->fetchField()) { 
+ 		$err = "no products yet"; 
+ 		return $err;
+ 	}
+ 	return $count;
+ }
+
+ function owners_company(){
+
+ 	$query = new EntityFieldQuery();
+ 	$query->entityCondition('entity_type', 'node')
+ 		->entityCondition('bundle', 'company')
+ 		->propertyCondition('uid', userid(), '=');
+
+ 	$result = $query->execute();
+
+ 	if(empty($result)){
+ 	 $mess = "not created yet";
+ 	 return $mess;
+ 	}
+
+ 	if(isset($result['node'])){
+ 		$company_ids = array_keys($result['node']);
+ 		$company = entity_load('node', $company_ids);
+ 	}
+ 	
+ 	return $company;
+ }
+
+ function userid(){
+
+ 	global $user;
+ 	return $userid = $user->uid;
+ }

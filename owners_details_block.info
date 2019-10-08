@@ -1,0 +1,5 @@
+name = Owners details block
+description = This module output as block
+package = custom
+core = 7.x
+version = 7.x
